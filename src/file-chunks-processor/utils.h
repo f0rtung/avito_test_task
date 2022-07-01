@@ -10,6 +10,7 @@ namespace freq {
 struct HeadTailPart {
     std::string head;
     std::string tail;
+    bool        is_continuous_part{false};
 };
 
 struct IndexedHeadTailPart{

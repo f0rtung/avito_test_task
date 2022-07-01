@@ -1,5 +1,6 @@
 #include "utils.h"
 
+#include <cassert>
 #include <algorithm>
 
 namespace freq {
@@ -29,6 +30,10 @@ HeadTailPart parseChunk(const Bytes& chunk, FreqDictByWord& freq_dict_by_word)
     if (chunk.cbegin() == next_word_begin) { // mb part of word from prev chunk
         auto next_word_end{std::find_if_not(next_word_begin, chunk.cend(), isCharacter)};
         head_tail_part.head = makeLowerCaseString(next_word_begin, next_word_end);
+        if (chunk.cend() == next_word_end) { // only head part, big word?!
+            head_tail_part.is_continuous_part = true;
+            return head_tail_part;
+        }
         next_word_begin = std::find_if(next_word_end, chunk.cend(), isCharacter);
     }
 
@@ -56,7 +61,10 @@ void mergeUnsortedIndexedHeadTailPartsToResult(IndexedHeadTailParts& parts, Freq
 
     IndexedHeadTailPart& curr_part{parts[0]};
 
-    if (!curr_part.head_tail_part.head.empty()) {
+    if (curr_part.head_tail_part.is_continuous_part) {
+        assert(curr_part.head_tail_part.tail.empty());
+        curr_part.head_tail_part.tail = std::move(curr_part.head_tail_part.head);
+    } else if (!curr_part.head_tail_part.head.empty()) {
         freq_dict_by_word[curr_part.head_tail_part.head] += 1;
     }
 
@@ -66,14 +74,20 @@ void mergeUnsortedIndexedHeadTailPartsToResult(IndexedHeadTailParts& parts, Freq
 
         if (curr_part.index == next_part.index - 1) {
             std::string word{curr_part.head_tail_part.tail + next_part.head_tail_part.head};
-            if (!word.empty()) {
+            if (next_part.head_tail_part.is_continuous_part) {
+                assert(next_part.head_tail_part.tail.empty());
+                next_part.head_tail_part.tail = std::move(word);
+            } else if (!word.empty()) {
                 freq_dict_by_word[std::move(word)] += 1;
             }
         } else {
             if (!curr_part.head_tail_part.tail.empty()) {
                 freq_dict_by_word[curr_part.head_tail_part.tail] += 1;
             }
-            if (!next_part.head_tail_part.head.empty()) {
+            if (next_part.head_tail_part.is_continuous_part) {
+                assert(next_part.head_tail_part.tail.empty());
+                next_part.head_tail_part.tail = std::move(next_part.head_tail_part.head);
+            } else if (!next_part.head_tail_part.head.empty()) {
                 freq_dict_by_word[next_part.head_tail_part.head] += 1;
             }
         }
