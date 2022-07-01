@@ -10,7 +10,7 @@
 #include <iostream>
 #include <thread>
 
-constexpr std::size_t ONE_MB_CHUNK_SIZE{1024 * 1024};
+constexpr std::size_t ONE_MB_CHUNK_SIZE{1024 * 1024}; // !hope there are no words with len >= 1Mb!
 constexpr std::size_t THREADS_COUNT{4};
 
 
